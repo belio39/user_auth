@@ -12,7 +12,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getAllUsers = exports.createUsers = void 0;
+exports.getUserByUserName = exports.getAllUsers = exports.createUsers = void 0;
 const uuid_1 = require("uuid");
 const mssql_1 = __importDefault(require("mssql"));
 const user_schema_1 = require("../models/user-schema");
@@ -61,3 +61,28 @@ const getAllUsers = (req, res) => __awaiter(void 0, void 0, void 0, function* ()
     }
 });
 exports.getAllUsers = getAllUsers;
+const getUserByUserName = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const userName = req.params.userName;
+        let pool = yield mssql_1.default.connect(config_1.default);
+        const user = yield pool
+            .request()
+            .input("userName", mssql_1.default.VarChar, userName)
+            .execute("getUserByUserName");
+        if (!user.recordset[0]) {
+            return res.json({
+                message: `No user with ${userName} Does Not exist`,
+            });
+        }
+        res.status(200).json({
+            message: "Success",
+            data: user.recordset,
+        });
+    }
+    catch (error) {
+        res.json({
+            error: error.message,
+        });
+    }
+});
+exports.getUserByUserName = getUserByUserName;

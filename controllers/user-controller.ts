@@ -54,3 +54,30 @@ export const getAllUsers: RequestHandler = async (req, res) => {
     res.json({ error: error.message });
   }
 };
+
+export const getUserByUserName: RequestHandler<{ userName: string }> = async (
+  req,
+  res
+) => {
+  try {
+    const userName = req.params.userName;
+    let pool = await mssql.connect(sqlConfig);
+    const user = await pool
+      .request()
+      .input("userName", mssql.VarChar, userName)
+      .execute("getUserByUserName");
+    if (!user.recordset[0]) {
+      return res.json({
+        message: `No user with ${userName} Does Not exist`,
+      });
+    }
+    res.status(200).json({
+      message: "Success",
+      data: user.recordset,
+    });
+  } catch (error: any) {
+    res.json({
+      error: error.message,
+    });
+  }
+};
