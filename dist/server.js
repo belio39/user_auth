@@ -15,7 +15,10 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = __importDefault(require("express"));
 const config_1 = __importDefault(require("./config/config"));
 const mssql_1 = __importDefault(require("mssql"));
+const user_routes_1 = __importDefault(require("./routes/user-routes"));
 const app = (0, express_1.default)();
+app.use(express_1.default.json());
+app.use("/", user_routes_1.default);
 const connecton = () => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const conn = yield mssql_1.default.connect(config_1.default);

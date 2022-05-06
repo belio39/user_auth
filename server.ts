@@ -1,8 +1,11 @@
 import express from "express";
 import sqlConfig from "./config/config";
 import mssql from "mssql";
+import router from "./routes/user-routes";
 
 const app = express();
+app.use(express.json());
+app.use("/", router);
 
 const connecton = async () => {
   try {
