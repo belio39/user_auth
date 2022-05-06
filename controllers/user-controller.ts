@@ -1,4 +1,4 @@
-import { v1 as uid } from "uuid";
+import { v4 as uuid } from "uuid";
 import { Request, RequestHandler, Response } from "express";
 import mssql from "mssql";
 import { userSchema } from "../models/user-schema";
@@ -8,7 +8,7 @@ dotenv.config();
 
 export const createUsers = async (req: Request, res: Response) => {
   try {
-    const id = uid;
+    const id = uuid();
     const { userName, fullName, email, age, password, role } = req.body as {
       userName: string;
       fullName: string;
@@ -31,9 +31,24 @@ export const createUsers = async (req: Request, res: Response) => {
       .input("email", mssql.VarChar, email)
       .input("age", mssql.Numeric, age)
       .input("password", mssql.VarChar, password)
-      .input("role", mssql.VarChar, role);
+      .input("role", mssql.VarChar, role)
+      .execute("createUsers");
     res.status(200).json({
       message: "User Created Successfully!",
+    });
+  } catch (error: any) {
+    res.json({ error: error.message });
+  }
+};
+
+export const getAllUsers: RequestHandler = async (req, res) => {
+  try {
+    let pool = await mssql.connect(sqlConfig);
+    const users = await pool.request().execute("getAllUsers");
+
+    res.status(200).json({
+      message: "Success",
+      data: users.recordset,
     });
   } catch (error: any) {
     res.json({ error: error.message });

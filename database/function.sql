@@ -11,7 +11,7 @@ CREATE OR ALTER PROCEDURE dbo.createUsers (
     @role VARCHAR(20) = 'STUDENT'
 )
 AS
-INSERT dbo.Users
+INSERT into dbo.Users
 VALUES (@id, @userName, @fullName, @email, @age, @password, @role)
 GO
 
