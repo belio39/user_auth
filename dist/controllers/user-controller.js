@@ -12,7 +12,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getUserByUserName = exports.getAllUsers = exports.createUsers = void 0;
+exports.updateUser = exports.getUserByUserName = exports.getAllUsers = exports.createUsers = void 0;
 const uuid_1 = require("uuid");
 const mssql_1 = __importDefault(require("mssql"));
 const user_schema_1 = require("../models/user-schema");
@@ -86,3 +86,38 @@ const getUserByUserName = (req, res) => __awaiter(void 0, void 0, void 0, functi
     }
 });
 exports.getUserByUserName = getUserByUserName;
+const updateUser = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const id = req.params.id;
+        let pool = yield mssql_1.default.connect(config_1.default);
+        const { userName, fullName, email, age, password, role } = req.body;
+        const user = yield pool
+            .request()
+            .input("userName", mssql_1.default.VarChar, id)
+            .execute("getUserByUserName");
+        if (!user.recordset[0]) {
+            return res.json({
+                message: `No user with that ${id}`,
+            });
+        }
+        yield pool
+            .request()
+            .input("id", mssql_1.default.VarChar, user.recordset[0].id)
+            .input("userName", mssql_1.default.VarChar, userName)
+            .input("fullName", mssql_1.default.VarChar, fullName)
+            .input("email", mssql_1.default.VarChar, email)
+            .input("age", mssql_1.default.Numeric, age)
+            .input("password", mssql_1.default.VarChar, password)
+            .input("role", mssql_1.default.VarChar, role)
+            .execute("updateUser");
+        res.status(200).json({
+            message: "User Successfully Updated",
+        });
+    }
+    catch (error) {
+        res.json({
+            error: error.message,
+        });
+    }
+});
+exports.updateUser = updateUser;

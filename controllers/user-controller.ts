@@ -81,3 +81,47 @@ export const getUserByUserName: RequestHandler<{ userName: string }> = async (
     });
   }
 };
+
+export const updateUser: RequestHandler<{ id: string }> = async (req, res) => {
+  try {
+    const id = req.params.id;
+    let pool = await mssql.connect(sqlConfig);
+    const { userName, fullName, email, age, password, role } = req.body as {
+      userName: string;
+      fullName: string;
+      email: string;
+      age: number;
+      password: string;
+      role: string;
+    };
+
+    const user = await pool
+      .request()
+      .input("userName", mssql.VarChar, id)
+      .execute("getUserByUserName");
+    if (!user.recordset[0]) {
+      return res.json({
+        message: `No user with that ${id}`,
+      });
+    }
+
+    await pool
+      .request()
+      .input("id", mssql.VarChar, user.recordset[0].id)
+      .input("userName", mssql.VarChar, userName)
+      .input("fullName", mssql.VarChar, fullName)
+      .input("email", mssql.VarChar, email)
+      .input("age", mssql.Numeric, age)
+      .input("password", mssql.VarChar, password)
+      .input("role", mssql.VarChar, role)
+      .execute("updateUser");
+
+    res.status(200).json({
+      message: "User Successfully Updated",
+    });
+  } catch (error: any) {
+    res.json({
+      error: error.message,
+    });
+  }
+};

@@ -38,6 +38,7 @@ CREATE OR ALTER PROCEDURE dbo.updateUser
     @password VARCHAR(255),
     @role VARCHAR(20) = 'STUDENT'
 AS
+BEGIN
 UPDATE dbo.Users
 SET
     userName = @userName,
@@ -47,6 +48,7 @@ SET
     password = @password,
     role = @role
 WHERE id = @id
+END;
 GO
 
 CREATE OR ALTER PROCEDURE dbo.deleteUser
