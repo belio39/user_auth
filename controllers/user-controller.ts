@@ -6,6 +6,10 @@ import sqlConfig from "../config/config";
 import dotenv from "dotenv";
 dotenv.config();
 
+// interface RequestExtended extends Request {
+//   user?: any;
+// }
+
 export const createUsers = async (req: Request, res: Response) => {
   try {
     const id = uuid();
@@ -125,3 +129,43 @@ export const updateUser: RequestHandler<{ id: string }> = async (req, res) => {
     });
   }
 };
+
+export const deleteUser: RequestHandler<{ id: string }> = async (req, res) => {
+  try {
+    const id = req.params.id;
+    let pool = await mssql.connect(sqlConfig);
+    const user = await pool
+      .request()
+      .input("id", mssql.VarChar, id)
+      .execute("getUserById");
+    if (!user.recordset[0]) {
+      return res.json({
+        message: `User with userName : ${id} Does Not exist`,
+      });
+    }
+
+    await pool.request().input("id", mssql.VarChar, id).execute("deleteUser");
+    res.status(200).json({
+      message: "User Successfully deleted",
+    });
+  } catch (error: any) {
+    res.json({
+      error: error.message,
+    });
+  }
+};
+
+// export const loginUser: RequestHandler = async (req, res) => {
+//   try {
+//     let pool = await mssql.connect(sqlConfig);
+//     const { email, password } = req.body as { email: string; password: string };
+//     const user = await pool.request().query(
+//       `
+//       `
+//     );
+//   } catch (error: any) {
+//     res.json({
+//       error: error.message,
+//     });
+//   }
+// };

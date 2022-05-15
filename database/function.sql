@@ -1,4 +1,4 @@
-USE Users
+USE users
 GO
 
 CREATE OR ALTER PROCEDURE dbo.createUsers (
@@ -29,6 +29,14 @@ FROM dbo.Users
 WHERE userName = @userName;
 GO
 
+CREATE OR ALTER PROCEDURE dbo.getUserById
+(@id VARCHAR(50))
+AS
+SELECT *
+FROM dbo.Users
+WHERE id = @id;
+GO
+
 CREATE OR ALTER PROCEDURE dbo.updateUser
     @id VARCHAR(50),
     @userName VARCHAR(10),
@@ -55,6 +63,10 @@ CREATE OR ALTER PROCEDURE dbo.deleteUser
  @id VARCHAR(50)
 
  AS
+ BEGIN
  DELETE FROM dbo.Users
  WHERE id=@id;
+ END
  GO
+
+SELECT * from Users
