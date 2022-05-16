@@ -12,11 +12,12 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.loginUser = exports.deleteUser = exports.updateUser = exports.getUserByUserName = exports.getAllUsers = exports.createUsers = void 0;
+exports.resetPassWord = exports.loginUser = exports.deleteUser = exports.updateUser = exports.getUserByUserName = exports.getAllUsers = exports.createUsers = void 0;
 const uuid_1 = require("uuid");
 const mssql_1 = __importDefault(require("mssql"));
 const user_schema_1 = require("../models/user-schema");
 const user_login_1 = require("../models/user-login");
+const register_schema_1 = require("../models/register-schema");
 const config_1 = __importDefault(require("../config/config"));
 const dotenv_1 = __importDefault(require("dotenv"));
 dotenv_1.default.config();
@@ -177,3 +178,37 @@ const loginUser = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     }
 });
 exports.loginUser = loginUser;
+const resetPassWord = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const id = req.params.id;
+        let pool = yield mssql_1.default.connect(config_1.default);
+        const { error } = register_schema_1.RegisterSchema.validate(req.body);
+        if (error) {
+            return res.json({ error: error.details[0].message });
+        }
+        const { password } = req.body;
+        const user = yield pool
+            .request()
+            .input("id", mssql_1.default.VarChar, id)
+            .execute("getUserById");
+        if (!user.recordset[0]) {
+            return res.json({
+                message: `No user with that ID ${id}`,
+            });
+        }
+        yield pool
+            .request()
+            .input("id", mssql_1.default.VarChar, id)
+            .input("password", mssql_1.default.VarChar, password)
+            .execute("resetPassWord");
+        res.status(200).json({
+            messege: "Password reset was successful",
+        });
+    }
+    catch (error) {
+        res.json({
+            error: error.message,
+        });
+    }
+});
+exports.resetPassWord = resetPassWord;

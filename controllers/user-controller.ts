@@ -3,6 +3,7 @@ import { Request, RequestHandler, Response } from "express";
 import mssql from "mssql";
 import { userSchema } from "../models/user-schema";
 import { logInSchema } from "../models/user-login";
+import { RegisterSchema } from "../models/register-schema";
 import sqlConfig from "../config/config";
 import dotenv from "dotenv";
 dotenv.config();
@@ -182,6 +183,39 @@ export const loginUser: RequestHandler = async (req, res) => {
         message: "Login Successifully",
       });
     res.json({ message: "Invalid password" });
+  } catch (error: any) {
+    res.json({
+      error: error.message,
+    });
+  }
+};
+
+export const resetPassWord: RequestHandler = async (req, res) => {
+  try {
+    const id = req.params.id;
+    let pool = await mssql.connect(sqlConfig);
+    const { error } = RegisterSchema.validate(req.body);
+    if (error) {
+      return res.json({ error: error.details[0].message });
+    }
+    const { password } = req.body as { password: string };
+    const user = await pool
+      .request()
+      .input("id", mssql.VarChar, id)
+      .execute("getUserById");
+    if (!user.recordset[0]) {
+      return res.json({
+        message: `No user with that ID ${id}`,
+      });
+    }
+    await pool
+      .request()
+      .input("id", mssql.VarChar, id)
+      .input("password", mssql.VarChar, password)
+      .execute("resetPassWord");
+    res.status(200).json({
+      messege: "Password reset was successful",
+    });
   } catch (error: any) {
     res.json({
       error: error.message,

@@ -12,4 +12,5 @@ router.get("/:userName", user_controller_1.getUserByUserName);
 router.put("/:id", user_controller_1.updateUser);
 router.delete("/:id", user_controller_1.deleteUser);
 router.post("/login", user_controller_1.loginUser);
+router.patch("/:id", user_controller_1.resetPassWord);
 exports.default = router;

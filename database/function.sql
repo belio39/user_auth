@@ -37,6 +37,15 @@ FROM dbo.Users
 WHERE id = @id;
 GO
 
+CREATE OR ALTER PROCEDURE dbo.resetPassWord
+(@id VARCHAR(50),@password VARCHAR(255))
+AS
+UPDATE dbo.Users
+SET
+    password = @password 
+WHERE id = @id
+GO
+
 CREATE OR ALTER PROCEDURE dbo.updateUser
     @id VARCHAR(50),
     @userName VARCHAR(10),
