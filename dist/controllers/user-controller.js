@@ -12,10 +12,11 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.deleteUser = exports.updateUser = exports.getUserByUserName = exports.getAllUsers = exports.createUsers = void 0;
+exports.loginUser = exports.deleteUser = exports.updateUser = exports.getUserByUserName = exports.getAllUsers = exports.createUsers = void 0;
 const uuid_1 = require("uuid");
 const mssql_1 = __importDefault(require("mssql"));
 const user_schema_1 = require("../models/user-schema");
+const user_login_1 = require("../models/user-login");
 const config_1 = __importDefault(require("../config/config"));
 const dotenv_1 = __importDefault(require("dotenv"));
 dotenv_1.default.config();
@@ -134,7 +135,7 @@ const deleteUser = (req, res) => __awaiter(void 0, void 0, void 0, function* () 
             .execute("getUserById");
         if (!user.recordset[0]) {
             return res.json({
-                message: `User with userName : ${id} Does Not exist`,
+                message: `User with ID : ${id} Does Not exist`,
             });
         }
         yield pool.request().input("id", mssql_1.default.VarChar, id).execute("deleteUser");
@@ -149,17 +150,30 @@ const deleteUser = (req, res) => __awaiter(void 0, void 0, void 0, function* () 
     }
 });
 exports.deleteUser = deleteUser;
-// export const loginUser: RequestHandler = async (req, res) => {
-//   try {
-//     let pool = await mssql.connect(sqlConfig);
-//     const { email, password } = req.body as { email: string; password: string };
-//     const user = await pool.request().query(
-//       `
-//       `
-//     );
-//   } catch (error: any) {
-//     res.json({
-//       error: error.message,
-//     });
-//   }
-// };
+const loginUser = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        let pool = yield mssql_1.default.connect(config_1.default);
+        const { userName, password } = req.body;
+        const { error } = user_login_1.logInSchema.validate(req.body);
+        if (error) {
+            return res.json({
+                error: error.details[0].message,
+            });
+        }
+        const user = (yield pool
+            .request()
+            .input("userName", mssql_1.default.VarChar, userName)
+            .execute("getUserByUserName")).recordset[0];
+        if (user && user.password === password)
+            return res.json({
+                message: "Login Successifully",
+            });
+        res.json({ message: "Invalid password" });
+    }
+    catch (error) {
+        res.json({
+            error: error.message,
+        });
+    }
+});
+exports.loginUser = loginUser;

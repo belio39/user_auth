@@ -2,6 +2,7 @@ import { v4 as uuid } from "uuid";
 import { Request, RequestHandler, Response } from "express";
 import mssql from "mssql";
 import { userSchema } from "../models/user-schema";
+import { logInSchema } from "../models/user-login";
 import sqlConfig from "../config/config";
 import dotenv from "dotenv";
 dotenv.config();
@@ -140,7 +141,7 @@ export const deleteUser: RequestHandler<{ id: string }> = async (req, res) => {
       .execute("getUserById");
     if (!user.recordset[0]) {
       return res.json({
-        message: `User with userName : ${id} Does Not exist`,
+        message: `User with ID : ${id} Does Not exist`,
       });
     }
 
@@ -155,17 +156,35 @@ export const deleteUser: RequestHandler<{ id: string }> = async (req, res) => {
   }
 };
 
-// export const loginUser: RequestHandler = async (req, res) => {
-//   try {
-//     let pool = await mssql.connect(sqlConfig);
-//     const { email, password } = req.body as { email: string; password: string };
-//     const user = await pool.request().query(
-//       `
-//       `
-//     );
-//   } catch (error: any) {
-//     res.json({
-//       error: error.message,
-//     });
-//   }
-// };
+export const loginUser: RequestHandler = async (req, res) => {
+  try {
+    let pool = await mssql.connect(sqlConfig);
+    const { userName, password } = req.body as {
+      userName: string;
+      password: string;
+    };
+    const { error } = logInSchema.validate(req.body);
+    if (error) {
+      return res.json({
+        error: error.details[0].message,
+      });
+    }
+
+    const user = (
+      await pool
+        .request()
+        .input("userName", mssql.VarChar, userName)
+        .execute("getUserByUserName")
+    ).recordset[0];
+
+    if (user && user.password === password)
+      return res.json({
+        message: "Login Successifully",
+      });
+    res.json({ message: "Invalid password" });
+  } catch (error: any) {
+    res.json({
+      error: error.message,
+    });
+  }
+};
