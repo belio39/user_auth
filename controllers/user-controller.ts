@@ -6,11 +6,13 @@ import { logInSchema } from "../models/user-login";
 import { RegisterSchema } from "../models/register-schema";
 import sqlConfig from "../config/config";
 import dotenv from "dotenv";
+import bcrypt from "bcrypt";
+import jwt from "jsonwebtoken";
 dotenv.config();
 
-// interface RequestExtended extends Request {
-//   user?: any;
-// }
+interface RequestExtended extends Request {
+  user?: any;
+}
 
 export const createUsers = async (req: Request, res: Response) => {
   try {
@@ -23,25 +25,26 @@ export const createUsers = async (req: Request, res: Response) => {
       password: string;
       role: string;
     };
-
+    const hashedPassword = await bcrypt.hash(password, 10);
     let pool = await mssql.connect(sqlConfig);
     const { error } = userSchema.validate(req.body);
     if (error) {
-      return res.json({ error: error.details[0].message });
+      return res.json(error.details[0].message);
+    } else {
+      await pool
+        .request()
+        .input("id", mssql.VarChar, id)
+        .input("userName", mssql.VarChar, userName)
+        .input("fullName", mssql.VarChar, fullName)
+        .input("email", mssql.VarChar, email)
+        .input("age", mssql.Numeric, age)
+        .input("password", mssql.VarChar, hashedPassword)
+        .input("role", mssql.VarChar, role)
+        .execute("createUsers");
+      res.status(200).json({
+        message: "User Created Successfully!",
+      });
     }
-    await pool
-      .request()
-      .input("id", mssql.VarChar, id)
-      .input("userName", mssql.VarChar, userName)
-      .input("fullName", mssql.VarChar, fullName)
-      .input("email", mssql.VarChar, email)
-      .input("age", mssql.Numeric, age)
-      .input("password", mssql.VarChar, password)
-      .input("role", mssql.VarChar, role)
-      .execute("createUsers");
-    res.status(200).json({
-      message: "User Created Successfully!",
-    });
   } catch (error: any) {
     res.json({ error: error.message });
   }
@@ -132,7 +135,7 @@ export const updateUser: RequestHandler<{ id: string }> = async (req, res) => {
   }
 };
 
-export const deleteUser: RequestHandler<{ id: string }> = async (req, res) => {
+export const deleteUser = async (req: RequestExtended, res: Response) => {
   try {
     const id = req.params.id;
     let pool = await mssql.connect(sqlConfig);
@@ -149,6 +152,7 @@ export const deleteUser: RequestHandler<{ id: string }> = async (req, res) => {
     await pool.request().input("id", mssql.VarChar, id).execute("deleteUser");
     res.status(200).json({
       message: "User Successfully deleted",
+      deletedBy: req.body.users.fullName,
     });
   } catch (error: any) {
     res.json({
@@ -164,6 +168,13 @@ export const loginUser: RequestHandler = async (req, res) => {
       userName: string;
       password: string;
     };
+    // Check if email and password exist
+    if (!userName || !password) {
+      return res.status(400).json({
+        message: "Please provide email and password!",
+      });
+    }
+
     const { error } = logInSchema.validate(req.body);
     if (error) {
       return res.json({
@@ -171,18 +182,25 @@ export const loginUser: RequestHandler = async (req, res) => {
       });
     }
 
-    const user = (
-      await pool
-        .request()
-        .input("userName", mssql.VarChar, userName)
-        .execute("getUserByUserName")
-    ).recordset[0];
+    const user = await pool
+      .request()
+      .input("userName", mssql.VarChar, userName)
+      .execute("getUserByUserName");
 
-    if (user && user.password === password)
-      return res.json({
-        message: "Login Successifully",
-      });
-    res.json({ message: "Invalid password" });
+    if (!user.recordset[0]) {
+      return res.json({ message: `Invalid credentials` });
+    }
+    const passwordMatch = await bcrypt.compare(
+      password,
+      user.recordset[0].password
+    );
+    if (!passwordMatch) {
+      return res.json({ message: `Invalid credentials` });
+    }
+
+    const { password: _, ...details } = user.recordset[0];
+
+    res.json({ message: "Login Successfulll", user: details });
   } catch (error: any) {
     res.json({
       error: error.message,
@@ -196,7 +214,7 @@ export const resetPassWord: RequestHandler = async (req, res) => {
     let pool = await mssql.connect(sqlConfig);
     const { error } = RegisterSchema.validate(req.body);
     if (error) {
-      return res.json({ error: error.details[0].message });
+      return res.json(error.details[0].message);
     }
     const { password } = req.body as { password: string };
     const user = await pool
@@ -208,10 +226,11 @@ export const resetPassWord: RequestHandler = async (req, res) => {
         message: `No user with that ID ${id}`,
       });
     }
+    const hashedPassword = await bcrypt.hash(password, 10);
     await pool
       .request()
       .input("id", mssql.VarChar, id)
-      .input("password", mssql.VarChar, password)
+      .input("password", mssql.VarChar, hashedPassword)
       .execute("resetPassWord");
     res.status(200).json({
       messege: "Password reset was successful",
@@ -221,4 +240,10 @@ export const resetPassWord: RequestHandler = async (req, res) => {
       error: error.message,
     });
   }
+};
+
+export const homePage = (req: RequestExtended, res: Response) => {
+  res.json({
+    Message: `Hello user ${req.body.users.fullname} Welcome..`,
+  });
 };
