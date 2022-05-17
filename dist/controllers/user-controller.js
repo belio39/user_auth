@@ -32,6 +32,7 @@ const register_schema_1 = require("../models/register-schema");
 const config_1 = __importDefault(require("../config/config"));
 const dotenv_1 = __importDefault(require("dotenv"));
 const bcrypt_1 = __importDefault(require("bcrypt"));
+const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 dotenv_1.default.config();
 const createUsers = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
@@ -192,7 +193,8 @@ const loginUser = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
             return res.json({ message: `Invalid credentials` });
         }
         const _a = user.recordset[0], { password: _ } = _a, details = __rest(_a, ["password"]);
-        res.json({ message: "Login Successfulll", user: details });
+        const token = yield jsonwebtoken_1.default.sign({ id: details.id }, process.env.SECRET_KEY, { expiresIn: "24h" });
+        res.json({ message: "Login Successfulll", user: details, token });
     }
     catch (error) {
         res.json({

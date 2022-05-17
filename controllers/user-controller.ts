@@ -41,6 +41,7 @@ export const createUsers = async (req: Request, res: Response) => {
         .input("password", mssql.VarChar, hashedPassword)
         .input("role", mssql.VarChar, role)
         .execute("createUsers");
+
       res.status(200).json({
         message: "User Created Successfully!",
       });
@@ -200,7 +201,13 @@ export const loginUser: RequestHandler = async (req, res) => {
 
     const { password: _, ...details } = user.recordset[0];
 
-    res.json({ message: "Login Successfulll", user: details });
+    const token = await jwt.sign(
+      { id: details.id },
+      process.env.SECRET_KEY as string,
+      { expiresIn: "24h" }
+    );
+
+    res.json({ message: "Login Successfulll", user: details, token });
   } catch (error: any) {
     res.json({
       error: error.message,

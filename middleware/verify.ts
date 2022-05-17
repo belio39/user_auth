@@ -14,11 +14,11 @@ export const VerifyToken = (
   try {
     const token = req.headers["token"] as string;
     if (!token) {
-      res.json({
+      return res.json({
         error: "Not Authorrized to access this route No Token!",
       });
     }
-    const decoded = jwt.verify(token, process.env.SECRET_KE as string);
+    const decoded = jwt.verify(token, process.env.SECRET_KEY as string);
     req.users = decoded;
     req.body.users = decoded;
   } catch (error) {

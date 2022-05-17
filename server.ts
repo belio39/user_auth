@@ -1,7 +1,10 @@
 import express from "express";
 import sqlConfig from "./config/config";
 import mssql from "mssql";
+import dotenv from "dotenv";
 import router from "./routes/user-routes";
+
+dotenv.config();
 
 const app = express();
 app.use(express.json());

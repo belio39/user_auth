@@ -11,11 +11,11 @@ const VerifyToken = (req, res, next) => {
     try {
         const token = req.headers["token"];
         if (!token) {
-            res.json({
+            return res.json({
                 error: "Not Authorrized to access this route No Token!",
             });
         }
-        const decoded = jsonwebtoken_1.default.verify(token, process.env.SECRET_KE);
+        const decoded = jsonwebtoken_1.default.verify(token, process.env.SECRET_KEY);
         req.users = decoded;
         req.body.users = decoded;
     }
