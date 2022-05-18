@@ -55,10 +55,13 @@ export const getAllUsers: RequestHandler = async (req, res) => {
   try {
     let pool = await mssql.connect(sqlConfig);
     const users = await pool.request().execute("getAllUsers");
-
+    const data = users.recordset.map((record) => {
+      const { password, ...rest } = record;
+      return rest;
+    });
     res.status(200).json({
       message: "Success",
-      data: users.recordset,
+      data,
     });
   } catch (error: any) {
     res.json({ error: error.message });
@@ -104,7 +107,12 @@ export const updateUser: RequestHandler<{ id: string }> = async (req, res) => {
       password: string;
       role: string;
     };
-
+    // Check if email and password exist
+    if (!userName) {
+      return res.status(400).json({
+        message: "Please provide your userName",
+      });
+    }
     const user = await pool
       .request()
       .input("userName", mssql.VarChar, id)
@@ -251,6 +259,6 @@ export const resetPassWord: RequestHandler = async (req, res) => {
 
 export const homePage = (req: RequestExtended, res: Response) => {
   res.json({
-    Message: `Hello user ${req.body.users.fullname} Welcome..`,
+    Message: `Hello user ${req.body.users.fullName} Welcome..`,
   });
 };

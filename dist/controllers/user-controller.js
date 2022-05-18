@@ -69,9 +69,13 @@ const getAllUsers = (req, res) => __awaiter(void 0, void 0, void 0, function* ()
     try {
         let pool = yield mssql_1.default.connect(config_1.default);
         const users = yield pool.request().execute("getAllUsers");
+        const data = users.recordset.map((record) => {
+            const { password } = record, rest = __rest(record, ["password"]);
+            return rest;
+        });
         res.status(200).json({
             message: "Success",
-            data: users.recordset,
+            data,
         });
     }
     catch (error) {
@@ -109,6 +113,12 @@ const updateUser = (req, res) => __awaiter(void 0, void 0, void 0, function* () 
         const id = req.params.id;
         let pool = yield mssql_1.default.connect(config_1.default);
         const { userName, fullName, email, age, password, role } = req.body;
+        // Check if email and password exist
+        if (!userName) {
+            return res.status(400).json({
+                message: "Please provide your userName",
+            });
+        }
         const user = yield pool
             .request()
             .input("userName", mssql_1.default.VarChar, id)
@@ -240,7 +250,7 @@ const resetPassWord = (req, res) => __awaiter(void 0, void 0, void 0, function* 
 exports.resetPassWord = resetPassWord;
 const homePage = (req, res) => {
     res.json({
-        Message: `Hello user ${req.body.users.fullname} Welcome..`,
+        Message: `Hello user ${req.body.users.fullName} Welcome..`,
     });
 };
 exports.homePage = homePage;
